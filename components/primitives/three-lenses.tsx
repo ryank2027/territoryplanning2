@@ -87,7 +87,7 @@ export function ThreeLenses({
               <TabsTrigger
                 key={lens.value}
                 value={lens.value}
-                className="flex h-auto flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left data-active:bg-surface data-active:shadow-sm"
+                className="flex h-auto flex-col items-center gap-0.5 rounded-lg px-3 py-2.5 text-center data-active:bg-surface data-active:shadow-sm"
               >
                 <span className="flex items-center gap-1.5 text-sm font-bold text-ink">
                   <Icon className="size-4 text-brand-teal" aria-hidden />
