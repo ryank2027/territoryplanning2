@@ -7,7 +7,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Cvent Territory Design Workspace',
   description:
-    'An interactive workspace for Cvent territory design across Prerequisites, Planning, and Monitoring.',
+    'An interactive workspace for Cvent territory planning and performance monitoring.',
   generator: 'v0.app',
 }
 

@@ -7,7 +7,7 @@ import { Disclaimer } from '@/components/primitives/disclaimers'
 import {
   InputsOutputsLens,
   SalesforceLaneCard,
-} from '@/components/prerequisites/lens-content'
+} from '@/components/primitives/lens-content'
 import { ScoreBuilder } from '@/components/planning/score-builder'
 import { TierBand } from '@/components/planning/tier-band'
 

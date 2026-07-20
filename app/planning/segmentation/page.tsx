@@ -8,7 +8,7 @@ import { Disclaimer } from '@/components/primitives/disclaimers'
 import {
   InputsOutputsLens,
   SalesforceLaneCard,
-} from '@/components/prerequisites/lens-content'
+} from '@/components/primitives/lens-content'
 import { GeographyHierarchy } from '@/components/planning/geography-hierarchy'
 import { BuExplorer } from '@/components/planning/bu-explorer'
 import { GuardrailGrid } from '@/components/planning/guardrail-grid'

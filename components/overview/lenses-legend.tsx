@@ -25,7 +25,7 @@ export function LensesLegend() {
       <div className="mb-4 flex flex-col gap-1">
         <Eyebrow tone="teal">Three lenses</Eyebrow>
         <p className="text-sm text-ink-2">
-          Every one of the nine recommendations is answered through all three
+          Every one of the four recommendations is answered through all three
           evaluation lenses, mapped to Territory Management capability functions
           feeding the L3/L4 process flows.
         </p>

@@ -11,7 +11,7 @@ export default function PrinciplesPage() {
       <PageHeader
         eyebrow="Summary"
         title="Guiding Principles & Recommendations"
-        lede="Four principles connect the full territory design model. Nine recommendations translate them into practical decisions across prerequisites, planning, and monitoring."
+        lede="Four principles connect the full territory design model. Four recommendations translate them into practical decisions across planning and monitoring."
       />
 
       <InsightPanel title="The whole model in one line" icon={Sparkles} tone="green">
@@ -29,7 +29,7 @@ export default function PrinciplesPage() {
       </SectionCard>
 
       <SectionCard
-        title="Nine recommendations"
+        title="Four recommendations"
         description="Each recommendation is examined through the same three lenses — rationale, inputs & outputs, and Salesforce translation. Select any to revisit its detail."
         icon={ListChecks}
       >
@@ -40,8 +40,8 @@ export default function PrinciplesPage() {
         <RotateCcw className="mt-0.5 size-5 shrink-0 text-brand-purple" aria-hidden />
         <p className="text-sm leading-relaxed text-ink-2">
           <span className="font-semibold text-ink">It closes the loop.</span>{' '}
-          Monitoring feeds insight back into Prerequisites and Planning, so the model
-          adapts as conditions change instead of being rebuilt from scratch each cycle.
+          Monitoring feeds current insight back into Planning, so the model adapts as
+          conditions change instead of being rebuilt from scratch each cycle.
           That feedback loop is what makes the four principles hold over time.
         </p>
       </div>

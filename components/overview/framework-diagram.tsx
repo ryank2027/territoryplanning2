@@ -7,7 +7,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils'
 
 const FOCUS_HREF: Record<string, string> = {
-  prerequisites: '/prerequisites',
   planning: '/planning/segmentation',
   monitoring: '/monitoring/kpis',
 }
@@ -100,13 +99,13 @@ export function FrameworkDiagram() {
         ))}
       </div>
 
-      {/* Feedback loop back from Monitoring to Prerequisites / Planning */}
+      {/* Feedback loop from Monitoring to Planning */}
       <div className="flex items-center gap-3 rounded-xl border border-dashed border-brand-purple/40 bg-brand-purple/5 px-4 py-2.5">
         <RotateCcw className="size-4 shrink-0 text-brand-purple" aria-hidden />
         <p className="text-xs leading-relaxed text-ink-2">
           <span className="font-semibold text-ink">Feedback loop.</span> Monitoring
-          feeds insight back into Prerequisites and Planning. Strategy stays agile as
-          conditions change, rather than being rebuilt from scratch.
+          feeds current performance insight back into Planning, keeping decisions
+          grounded as conditions change.
         </p>
       </div>
     </div>

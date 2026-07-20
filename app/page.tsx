@@ -4,8 +4,8 @@ import { LensesLegend } from '@/components/overview/lenses-legend'
 import { Eyebrow } from '@/components/primitives/eyebrow'
 
 const COUNTERS = [
-  { icon: Target, value: '3', label: 'focus areas' },
-  { icon: Layers, value: '9', label: 'recommendations' },
+  { icon: Target, value: '2', label: 'focus areas' },
+  { icon: Layers, value: '4', label: 'recommendations' },
   { icon: Activity, value: '3', label: 'evaluation lenses' },
 ]
 
@@ -22,13 +22,12 @@ export default function OverviewPage() {
           <Eyebrow tone="teal">Territory Design Workspace · FY26</Eyebrow>
           <h1 className="max-w-3xl text-pretty text-3xl font-bold leading-tight tracking-tight text-surface md:text-5xl">
             One territory framework,{' '}
-            <span className="text-brand-green">three focus areas.</span>
+            <span className="text-brand-green">two focus areas.</span>
           </h1>
           <p className="max-w-2xl text-pretty leading-relaxed text-surface/75">
             The top of the hierarchy is standardized across every business unit, with
-            BU-specific structure below it. A feedback loop keeps strategy agile:
-            Prerequisites inform Planning, Planning is kept accurate by Monitoring, and
-            Monitoring feeds insight back into the model.
+            BU-specific structure below it. Planning defines the territory model, while
+            Monitoring keeps performance visible and decisions grounded in current data.
           </p>
 
           <div className="mt-2 flex flex-wrap gap-3">
@@ -58,7 +57,7 @@ export default function OverviewPage() {
         <div className="flex flex-col gap-1">
           <Eyebrow tone="teal">The framework</Eyebrow>
           <h2 className="text-xl font-bold tracking-tight text-ink md:text-2xl">
-            Prerequisites → Planning → Monitoring
+            Planning → Monitoring
           </h2>
           <p className="max-w-3xl text-sm leading-relaxed text-ink-2">
             Select any recommendation to open its detail. Each is examined through the

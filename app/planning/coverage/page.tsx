@@ -20,7 +20,7 @@ import { Disclaimer } from '@/components/primitives/disclaimers'
 import {
   InputsOutputsLens,
   SalesforceLaneCard,
-} from '@/components/prerequisites/lens-content'
+} from '@/components/primitives/lens-content'
 import { FormulaBlock } from '@/components/planning/formula-block'
 import { FilterThenRank } from '@/components/planning/filter-then-rank'
 import { CoverageFlow } from '@/components/planning/coverage-flow'
