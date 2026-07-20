@@ -1,0 +1,169 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  /* Cvent 2026 brand tokens */
+  --color-brand-green: var(--brand-green);
+  --color-brand-lime: var(--brand-lime);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-purple: var(--brand-purple);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-surface: var(--surface);
+  --color-surface-tint: var(--surface-tint);
+  --color-sage: var(--sage);
+  --color-sage-2: var(--sage-2);
+  --color-warn: var(--warn);
+
+  --font-sans: var(--font-brand);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Cvent 2026 New Brand raw tokens */
+  --brand-green: #01ef6c;
+  --brand-lime: #c7f522;
+  --brand-teal: #00b8c5;
+  --brand-purple: #ab3eff;
+  --ink: #14201a;
+  --ink-2: #33413b;
+  --surface: #ffffff;
+  /* Warm-white canvas, crisp cards, and restrained mint section surfaces */
+  --canvas: #f8faf9;
+  --panel: #ffffff;
+  --surface-tint: #eef5f2;
+  --sage: #8ea79f;
+  --sage-2: #526761;
+  --warn: #d98a00;
+
+  --font-brand: Arial, Helvetica, sans-serif;
+
+  /* Semantic mapping */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand-green);
+  --primary-foreground: var(--ink);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: #dbe7e2;
+  --muted-foreground: var(--sage-2);
+  --accent: var(--brand-teal);
+  --accent-foreground: #ffffff;
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
+  --border: #cfdcd6;
+  --input: #cfdcd6;
+  --ring: var(--brand-green);
+
+  --chart-1: #01ef6c;
+  --chart-2: #00b8c5;
+  --chart-3: #ab3eff;
+  --chart-4: #c7f522;
+  --chart-5: #6e827d;
+
+  --radius: 0.75rem;
+
+  /* Dark ink sidebar */
+  --sidebar: var(--ink);
+  --sidebar-foreground: #d7e3e0;
+  --sidebar-primary: var(--brand-green);
+  --sidebar-primary-foreground: var(--ink);
+  --sidebar-accent: var(--ink-2);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: var(--brand-green);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply scroll-smooth bg-background;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    line-height: 1.5;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--brand-green) 34%, transparent);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline-width: 2px;
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .content-surface {
+    @apply rounded-xl border border-border/70 bg-card shadow-[0_1px_2px_rgba(20,32,26,0.04),0_12px_32px_rgba(20,32,26,0.04)];
+  }
+
+  .section-stack {
+    @apply flex flex-col gap-6 md:gap-8;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff;
+  }
+}
