@@ -77,7 +77,7 @@ export function ThreeLenses({
         <div className="-mx-1 overflow-x-auto px-1 pb-1">
           <TabsList
             className={cn(
-              'grid h-auto min-w-[520px] gap-1.5 rounded-xl bg-muted p-1.5 sm:min-w-0',
+              'grid h-auto w-fit gap-1.5 rounded-xl bg-muted p-1.5',
               lenses.length === 3 ? 'grid-cols-3' : 'grid-cols-2',
             )}
           >
