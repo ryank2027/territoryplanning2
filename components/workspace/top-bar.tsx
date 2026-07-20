@@ -1,6 +1,5 @@
 'use client'
 
-import { useRef, useState } from 'react'
 import {
   Download,
   Menu,
@@ -8,7 +7,6 @@ import {
   Presentation,
   Printer,
   RotateCcw,
-  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -46,22 +44,7 @@ function IconAction({
 }
 
 export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
-  const { period, mode, setMode, exportConfig, importConfig, reset } =
-    useWorkspace()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [importError, setImportError] = useState<string | null>(null)
-
-  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = '' // allow re-importing the same file
-    if (!file) return
-    try {
-      await importConfig(file)
-      setImportError(null)
-    } catch (err) {
-      setImportError(err instanceof Error ? err.message : 'Import failed.')
-    }
-  }
+  const { period, mode, setMode, reset } = useWorkspace()
 
   return (
     <header className="no-print sticky top-0 z-30 border-b border-border/70 bg-surface/95 shadow-[0_1px_8px_rgba(20,32,26,0.04)] backdrop-blur-xl">
@@ -129,35 +112,12 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
           </div>
 
           <div className="hidden items-center gap-0.5 sm:flex">
-            <IconAction label="Export config (JSON)" icon={Download} onClick={exportConfig} />
-            <IconAction
-              label="Import config (JSON)"
-              icon={Upload}
-              onClick={() => fileInputRef.current?.click()}
-            />
             <IconAction label="Print / PDF" icon={Printer} onClick={() => window.print()} />
             <IconAction label="Reset workspace" icon={RotateCcw} onClick={reset} />
           </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            onChange={handleImportFile}
-            aria-hidden
-          />
         </div>
       </div>
 
-      {importError && (
-        <div
-          role="status"
-          className="border-t border-destructive/30 bg-destructive/10 px-6 py-1.5 text-xs font-medium text-destructive"
-        >
-          Import failed: {importError}
-        </div>
-      )}
     </header>
   )
 }
