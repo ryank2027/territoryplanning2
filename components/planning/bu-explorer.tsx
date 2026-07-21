@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import TerritoryMap from '@/components/territory-map'
 import { SegmentedControl } from './segmented-control'
+import { GeoCut } from './geo-cut'
 import { cn } from '@/lib/utils'
 
 const TIER_DOT: Record<string, string> = {
@@ -168,8 +169,21 @@ export function BuExplorer() {
     ),
   }
 
+  // One mapping shared by the guided Geography cut and the other cuts' map.
+  const mapAccounts = buAccounts.map((a) => ({
+    id: a.id,
+    name: a.name,
+    geography: a.geography,
+    dma: a.dma,
+    zip3: a.zip3,
+    region: a.region,
+    moved: a.moved,
+    category: accountCutValue(a, colorAttr),
+    sizeBand: accountCutValue(a, sizeAttr),
+  }))
+
   const stageDescription = isGeoStep
-    ? 'The shared geographic backbone: Region → State → DMA. Regions enclose their states; click a state to select it and carry it into the next cut.'
+    ? 'The five-level geographic backbone: Global Region → Country → State Region → State → ZIP3. Drill down through each level; the state you land on carries into the next cut.'
     : isRefineStep
       ? `${focusState ?? 'Selected state'} · bubble size shows ${sizeLabel.toLowerCase()}. Filter by a ${sizeLabel.toLowerCase()} band to drill down once more.`
       : `${focusState ?? 'Selected state'} · each account colored by ${categorical.label.toLowerCase()}.`

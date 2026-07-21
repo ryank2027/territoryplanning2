@@ -52,6 +52,8 @@ export interface MapAccount {
   geography: string;
   /** DMA / metro market within the state (Level 3 of the geo hierarchy). */
   dma?: string;
+  /** ZIP3 — first 3 digits of the ZIP (Level 5, leaf of the geo hierarchy). */
+  zip3?: string;
   region: Region;
   /** Optional: render this account as "moved" in the current scenario. */
   moved?: boolean;
@@ -250,10 +252,24 @@ export interface TerritoryMapProps {
   filter?: { label: string; value: string; field?: "category" | "size" } | null;
   /** Geography cut: show region containment outlines + cluster markers by DMA. */
   groupByDma?: boolean;
+  /**
+   * Guided geography drill level. When set, the map is driven by the external
+   * hierarchy ladder instead of its own breadcrumb:
+   *  - "country": North America, US emphasized; click US to advance.
+   *  - "stateRegion": US states colored by region; click selects the region.
+   *  - "state": zoomed to `focusRegion`; click selects a single state.
+   *  - "zip3": zoomed to the selected state; accounts clustered by ZIP3.
+   */
+  geoLevel?: "country" | "stateRegion" | "state" | "zip3";
+  /** Called at the "country" level when the user picks the United States. */
+  onSelectCountry?: () => void;
+  /** Called at the "stateRegion" level when the user picks a state region. */
+  onSelectStateRegion?: (region: Region) => void;
   className?: string;
 }
 
 const NEUTRAL_STATE_FILL = "#E6EEEC"; // light backdrop when a non-geo cut is active
+const US_EMPHASIS_FILL = "#9BE7C0"; // soft brand-green — emphasizes the US at the country level
 const DEFAULT_SIZE_BANDS = ["SMB", "Mid-Market", "Enterprise"];
 
 export default function TerritoryMap({
@@ -266,8 +282,13 @@ export default function TerritoryMap({
   sizeLegend,
   filter = null,
   groupByDma = false,
+  geoLevel,
+  onSelectCountry,
+  onSelectStateRegion,
   className = "",
 }: TerritoryMapProps) {
+  const guided = geoLevel !== undefined;
+  const zip3Mode = geoLevel === "zip3";
   const [internalName, setInternalName] = useState<string>("All");
 
   // Selection is controlled when `selectedStateName` is provided; otherwise the
@@ -362,7 +383,9 @@ export default function TerritoryMap({
     <div
       className={`overflow-hidden rounded-xl border border-[#DCE3E1] bg-white ${className}`}
     >
-      {/* Toolbar: breadcrumb + controls */}
+      {/* Toolbar: breadcrumb + controls (hidden in guided mode — the external
+          hierarchy ladder drives navigation instead). */}
+      {!guided && (
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DCE3E1] px-4 py-3 text-sm font-semibold text-[#43536b]">
         <div className="flex min-w-0 items-center gap-2">
           <span className="inline-block h-2 w-2 rounded-full bg-[#01EF6C]" />
@@ -429,6 +452,7 @@ export default function TerritoryMap({
           )}
         </div>
       </div>
+      )}
 
       {/* Map */}
       <svg
@@ -472,27 +496,64 @@ export default function TerritoryMap({
           unitedStates.map((s) => {
             const name = s.properties.name;
             const r = stateRegion(name);
+            // At the "state" level only the active region's states are live;
+            // everything else is muted so the region reads as the working set.
+            const outOfRegion =
+              geoLevel === "state" && focusRegion != null && r !== focusRegion;
+            const interactive = !outOfRegion;
+            // Fill: country level emphasizes the US in one green tint; region &
+            // state levels color by region; non-geo cuts stay neutral.
+            const fill = !isGeoCut
+              ? NEUTRAL_STATE_FILL
+              : outOfRegion
+                ? NEUTRAL_STATE_FILL
+                : geoLevel === "country"
+                  ? US_EMPHASIS_FILL
+                  : REGION_FILL[r];
+            const handleSelect = () => {
+              if (!interactive) return;
+              if (geoLevel === "country") return onSelectCountry?.();
+              if (geoLevel === "stateRegion") return onSelectStateRegion?.(r);
+              setSelectedName(name);
+            };
+            const title =
+              geoLevel === "country"
+                ? "United States"
+                : geoLevel === "stateRegion"
+                  ? `${r} region`
+                  : `${name} · ${r}`;
             return (
               <path
                 key={name}
                 d={path(s as any) ?? undefined}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open ${name} territory`}
-                fill={isGeoCut ? REGION_FILL[r] : NEUTRAL_STATE_FILL}
+                role={interactive ? "button" : undefined}
+                tabIndex={interactive ? 0 : undefined}
+                aria-label={
+                  geoLevel === "country"
+                    ? "Select the United States"
+                    : geoLevel === "stateRegion"
+                      ? `Select the ${r} state region`
+                      : `Open ${name} territory`
+                }
+                fill={fill}
                 stroke={STROKE}
                 strokeWidth={0.85}
-                style={{ cursor: "pointer", transition: "filter .15s, opacity .15s" }}
-                onClick={() => setSelectedName(name)}
+                strokeOpacity={outOfRegion ? 0.5 : 1}
+                style={{
+                  cursor: interactive ? "pointer" : "default",
+                  transition: "filter .15s, opacity .15s",
+                }}
+                onClick={handleSelect}
                 onKeyDown={(e) =>
-                  (e.key === "Enter" || e.key === " ") && setSelectedName(name)
+                  (e.key === "Enter" || e.key === " ") && handleSelect()
                 }
                 onMouseEnter={(e) =>
+                  interactive &&
                   (e.currentTarget.style.filter = "brightness(1.12)")
                 }
                 onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
               >
-                <title>{`${name} · ${r}`}</title>
+                <title>{title}</title>
               </path>
             );
           })}
@@ -502,7 +563,7 @@ export default function TerritoryMap({
         {!selectedState &&
           !focusRegion &&
           isGeoCut &&
-          groupByDma &&
+          (groupByDma || geoLevel === "stateRegion") &&
           US_REGIONS.map((r) => {
             const outline = regionOutline(r);
             const [lx, ly] = path.centroid(regionLabelGeometry(r) as any);
@@ -538,8 +599,11 @@ export default function TerritoryMap({
             );
           })}
 
-        {/* Overview / region focus: markers placed at their state centroids */}
+        {/* Overview / region focus: markers placed at their state centroids.
+            Hidden during the guided drill (levels 1–4 are about geography
+            selection; accounts appear at the ZIP3 leaf). */}
         {!selectedState &&
+          !guided &&
           (() => {
             const seen = new Map<string, number>();
             const visible = focusRegion
@@ -598,6 +662,7 @@ export default function TerritoryMap({
 
         {selectedState &&
           !groupByDma &&
+          !zip3Mode &&
           markerAccounts.slice(0, 14).map((a, i) => {
             const [cx, cy] = path.centroid(selectedState as any);
             const rr = radiusFor(a.sizeBand, sizeBands) * 1.5;
@@ -625,6 +690,86 @@ export default function TerritoryMap({
               </circle>
             );
           })}
+
+        {/* Level 5 (leaf): cluster the state's accounts by ZIP3. Each ZIP3 is a
+            labeled bubble sized by its account count. ZIP3 polygons aren't
+            available, so clusters sit at their DMA's metro coordinate (or a
+            ring around the state centroid) — illustrative, not cartographic. */}
+        {selectedState &&
+          zip3Mode &&
+          (() => {
+            const [cx, cy] = path.centroid(selectedState as any);
+            const groups = new Map<string, MapAccount[]>();
+            markerAccounts.forEach((a) => {
+              const key = a.zip3 ?? "000";
+              (groups.get(key) ?? groups.set(key, []).get(key)!).push(a);
+            });
+            const entries = Array.from(groups.entries());
+            const G = entries.length;
+            return entries.map(([zip3, accts], gi) => {
+              const coord = accts[0]?.dma ? DMA_COORDS[accts[0].dma] : undefined;
+              const projected = coord
+                ? (projection([coord[0], coord[1]]) as [number, number] | null)
+                : null;
+              let gx: number;
+              let gy: number;
+              if (projected) {
+                [gx, gy] = projected;
+              } else {
+                const gAngle = (gi / G) * Math.PI * 2 - Math.PI / 2;
+                const gRadius = G === 1 ? 0 : 78;
+                gx = cx + Math.cos(gAngle) * gRadius;
+                gy = cy + Math.sin(gAngle) * gRadius;
+              }
+              // Bubble radius encodes the ZIP3 account count.
+              const bubble = 15 + Math.min(accts.length, 8) * 3;
+              const dimGroup = accts.every((a) => isDimmed(a));
+              return (
+                <g key={zip3}>
+                  <circle
+                    cx={gx}
+                    cy={gy}
+                    r={bubble}
+                    fill={MARKER_FILL}
+                    fillOpacity={dimGroup ? 0.08 : 0.14}
+                    stroke={MARKER_FILL}
+                    strokeOpacity={dimGroup ? 0.3 : 0.7}
+                    strokeWidth={1.25}
+                  />
+                  {/* ZIP3 digits + account count */}
+                  <text
+                    x={gx}
+                    y={gy - 1}
+                    textAnchor="middle"
+                    className="select-none"
+                    style={{ fontSize: 13, fontWeight: 800, fill: MARKER_FILL }}
+                  >
+                    {zip3}
+                  </text>
+                  <text
+                    x={gx}
+                    y={gy + 12}
+                    textAnchor="middle"
+                    className="select-none"
+                    style={{ fontSize: 9, fontWeight: 600, fill: MARKER_FILL, opacity: 0.7 }}
+                  >
+                    {`${zip3}xx · ${accts.length}`}
+                  </text>
+                  {/* clickable hit target for the cluster's lead account */}
+                  <circle
+                    cx={gx}
+                    cy={gy}
+                    r={bubble}
+                    fill="transparent"
+                    style={{ cursor: onSelectAccount ? "pointer" : "default" }}
+                    onClick={() => accts[0] && onSelectAccount?.(accts[0].id)}
+                  >
+                    <title>{`ZIP3 ${zip3}xx · ${accts.length} accounts`}</title>
+                  </circle>
+                </g>
+              );
+            });
+          })()}
 
         {/* Geography drill-in: cluster the state's accounts by DMA (Level 3),
             each metro labeled and haloed so the third hierarchy level shows. */}
@@ -732,7 +877,11 @@ export default function TerritoryMap({
       {/* Legend — reflects the active segmentation cut */}
       <div className="flex flex-wrap items-center gap-4 border-t border-[#DCE3E1] px-4 py-3 text-xs text-[#60708a]">
         <span className="font-bold text-[#17201C]">
-          {isGeoCut ? "Geography · Region → State → DMA" : colorBy?.label}
+          {isGeoCut
+            ? guided
+              ? "Global Region → Country → State Region → State → ZIP3"
+              : "Geography · Region → State → DMA"
+            : colorBy?.label}
         </span>
         {isGeoCut ? (
           <>
@@ -741,6 +890,7 @@ export default function TerritoryMap({
             <LegendDot color={REGION_FILL.East} label="East" />
             <LegendDot color={REGION_FILL.Canada} label="Canada" />
             {groupByDma && <LegendDma label="DMA cluster" />}
+            {zip3Mode && <LegendDma label="ZIP3 cluster" />}
             <LegendDot color={MARKER_FILL} label="Account" />
           </>
         ) : (
@@ -763,6 +913,13 @@ export default function TerritoryMap({
         <p className="px-4 pb-3 text-xs text-[#8EA79F]">
           No exact state records in the compact synthetic dataset — showing the{" "}
           {region} regional sample.
+        </p>
+      )}
+
+      {zip3Mode && (
+        <p className="px-4 pb-3 text-xs text-[#8EA79F]">
+          Illustrative — ZIP3 shown as clustered accounts (label = the 3 ZIP
+          digits, size = account count).
         </p>
       )}
     </div>

@@ -257,6 +257,16 @@ export interface SampleAccount {
   /** DMA / metro market within the state (Level 3 of the geo hierarchy). */
   dma?: string
   region: MapRegion
+  /** Level 1 of the geo hierarchy — global region (e.g. "Americas"). */
+  globalRegion?: string
+  /** Level 2 of the geo hierarchy — country (e.g. "United States"). */
+  country?: string
+  /** Level 3 of the geo hierarchy — state region (West / Central / East / Canada). */
+  stateRegion?: MapRegion
+  /** Level 4 of the geo hierarchy — full state name (mirrors `geography`). */
+  state?: string
+  /** Level 5 of the geo hierarchy — first 3 digits of the ZIP (e.g. "941"). */
+  zip3?: string
   /** Industry / vertical cut value (Commercial + Enterprise). */
   vertical?: string
   /** Company size / potential band cut value (all BUs). */
@@ -393,6 +403,41 @@ export const DMA_BY_STATE: Record<string, string[]> = {
   Arizona: ['Phoenix', 'Tucson'],
 }
 
+/**
+ * Representative 3-digit ZIP prefix (ZIP3) per DMA — Level 5 (leaf) of the
+ * geographic backbone. Real ZIP3/SCF polygons aren't available, so each metro
+ * is given its dominant ZIP3 and accounts inherit it from their DMA.
+ */
+export const ZIP3_BY_DMA: Record<string, string> = {
+  'Los Angeles': '900',
+  'San Francisco Bay Area': '941',
+  'San Diego': '920',
+  'Seattle–Tacoma': '981',
+  Spokane: '992',
+  'Dallas–Ft. Worth': '752',
+  Houston: '770',
+  Austin: '787',
+  Chicago: '606',
+  Springfield: '627',
+  'New York City': '100',
+  Buffalo: '142',
+  Atlanta: '303',
+  Savannah: '314',
+  Boston: '021',
+  'Western Mass': '010',
+  'Cleveland–Akron': '441',
+  Columbus: '432',
+  'Miami–Ft. Lauderdale': '331',
+  Orlando: '328',
+  'Tampa Bay': '335',
+  'Las Vegas': '891',
+  Reno: '895',
+  Denver: '802',
+  'Colorado Springs': '809',
+  Phoenix: '850',
+  Tucson: '857',
+}
+
 /** Meeting-space footprint that typically maps to each venue type. */
 const MEETING_SPACE_BY_VENUE: Record<string, string> = {
   'Branded / Enterprise': '50k+ sqft',
@@ -426,6 +471,7 @@ function buildMapAccounts(
         .filter((v) => v !== seed.lean)
       const cat = i % 4 === 3 ? others[seedNum % others.length] : seed.lean
       const dmas = DMA_BY_STATE[seed.state] ?? [seed.state]
+      const dma = dmas[i % dmas.length]
       const account: SampleAccount = {
         id: `${bu[0].toLowerCase()}${si}${i}`,
         name: `${NAME_BASES[g % NAME_BASES.length]} ${
@@ -436,8 +482,14 @@ function buildMapAccounts(
         potential: 46 + ((seedNum * 23 + 7) % 50),
         geography: seed.state,
         // Spread accounts across the state's DMAs (Level 3).
-        dma: dmas[i % dmas.length],
+        dma,
         region: seed.region,
+        // Full five-level geographic backbone.
+        globalRegion: 'Americas',
+        country: 'United States',
+        stateRegion: seed.region,
+        state: seed.state,
+        zip3: ZIP3_BY_DMA[dma] ?? '000',
         sizeBand: SIZE_BANDS[(si + i) % SIZE_BANDS.length],
         moved: g % 9 === 4,
       }
