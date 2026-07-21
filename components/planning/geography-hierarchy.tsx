@@ -2,18 +2,18 @@ import { ChevronRight } from 'lucide-react'
 import { GEO_HIERARCHY } from '@/lib/planning'
 import { Eyebrow } from '@/components/primitives/eyebrow'
 
-/** Four-level USA geography hierarchy: National → State → DMA → City/Postal. */
+/** Five-level geography hierarchy: Global Region → Country → State Region → State → ZIP3. */
 export function GeographyHierarchy() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <Eyebrow tone="teal">Geography hierarchy · USA</Eyebrow>
+        <Eyebrow tone="teal">Geography hierarchy</Eyebrow>
         <p className="text-sm leading-relaxed text-ink-2">
-          Four shared levels form the backbone every business unit builds on.
+          Five shared levels form the backbone every business unit builds on.
         </p>
       </div>
 
-      <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {GEO_HIERARCHY.map((geo, i) => (
           <li
             key={geo.level}

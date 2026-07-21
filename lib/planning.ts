@@ -15,27 +15,33 @@ export interface GeoLevel {
 export const GEO_HIERARCHY: GeoLevel[] = [
   {
     level: 'Level 1',
-    name: 'National / Country',
-    detail: 'Top of the tree, identical across every BU for clean roll-up.',
-    example: 'United States',
+    name: 'Global Region',
+    detail: 'Top of the tree — Americas, EMEA, APAC. Identical across every BU for clean roll-up.',
+    example: 'Americas',
   },
   {
     level: 'Level 2',
-    name: 'State',
-    detail: 'Primary boundary unit; maps to region groupings for reporting.',
-    example: 'California',
+    name: 'Country',
+    detail: 'The national market within a global region.',
+    example: 'United States',
   },
   {
     level: 'Level 3',
-    name: 'DMA',
-    detail: 'Designated Market Area, a grouping of cities/divisions in a state.',
-    example: 'Los Angeles DMA',
+    name: 'State Region',
+    detail: 'Reporting grouping of states — West, Central, East, Canada.',
+    example: 'West',
   },
   {
     level: 'Level 4',
-    name: 'City / Postal Code',
-    detail: 'Finest cut, used to keep books contiguous and drive-time efficient.',
-    example: 'Santa Monica 90401',
+    name: 'State',
+    detail: 'Primary boundary unit that carries into every downstream cut.',
+    example: 'California',
+  },
+  {
+    level: 'Level 5',
+    name: 'ZIP3',
+    detail: 'Finest cut — first 3 ZIP digits keep books contiguous and drive-time efficient.',
+    example: '941xx',
   },
 ]
 

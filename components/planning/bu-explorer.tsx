@@ -442,11 +442,11 @@ export function BuExplorer() {
 
         <p className="text-sm leading-relaxed text-ink-2">{stageDescription}</p>
 
-        {/* Geo step: prompt to pick the state that seeds the funnel */}
+        {/* Geo step: prompt to drill the hierarchy down to a state */}
         {isGeoStep && !selectedStateName && (
           <p className="rounded-xl border border-dashed border-border/70 bg-surface px-3 py-2 text-xs font-medium text-sage-2">
-            Click a state on the map to select it, then continue to refine that
-            state in the next cut.
+            Drill down the geography hierarchy to a single state, then continue
+            to refine that state in the next cut.
           </p>
         )}
 
@@ -491,29 +491,30 @@ export function BuExplorer() {
           </div>
         )}
 
-        <TerritoryMap
-          accounts={buAccounts.map((a) => ({
-            id: a.id,
-            name: a.name,
-            geography: a.geography,
-            dma: a.dma,
-            region: a.region,
-            moved: a.moved,
-            category: accountCutValue(a, colorAttr),
-            sizeBand: accountCutValue(a, sizeAttr),
-          }))}
-          colorBy={colorBy}
-          selectedStateName={focusState}
-          onSelectStateName={setSelectedStateName}
-          sizeLegend={{ label: sizeLabel, bands: sizeBands }}
-          filter={
-            isRefineStep
-              ? { label: sizeLabel, value: filterValue, field: 'size' }
-              : null
-          }
-          groupByDma={isGeoStep}
-          onSelectAccount={setSelectedAccountId}
-        />
+        {isGeoStep ? (
+          <GeoCut
+            accounts={mapAccounts}
+            colorBy={colorBy}
+            sizeLegend={{ label: sizeLabel, bands: sizeBands }}
+            selectedStateName={selectedStateName}
+            onSelectStateName={setSelectedStateName}
+            onSelectAccount={setSelectedAccountId}
+          />
+        ) : (
+          <TerritoryMap
+            accounts={mapAccounts}
+            colorBy={colorBy}
+            selectedStateName={focusState}
+            onSelectStateName={setSelectedStateName}
+            sizeLegend={{ label: sizeLabel, bands: sizeBands }}
+            filter={
+              isRefineStep
+                ? { label: sizeLabel, value: filterValue, field: 'size' }
+                : null
+            }
+            onSelectAccount={setSelectedAccountId}
+          />
+        )}
         {selectedAccount && (
           <DecisionRecord
             account={selectedAccount}

@@ -41,7 +41,7 @@ export default function SegmentationPage() {
 
       <SectionCard
         title="Geography hierarchy"
-        description="A clean four-level backbone, shared across every business unit."
+        description="A clean five-level backbone, shared across every business unit."
         icon={Map}
       >
         <GeographyHierarchy />
