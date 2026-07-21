@@ -95,6 +95,14 @@ export function BuExplorer() {
     setSelectedZip3(null)
   }
 
+  // Selecting a ZIP3 on the Geography cut records the leaf AND immediately
+  // advances to the next cut — the drill flows straight through without the
+  // user having to click "Next cut".
+  function selectZip3AndAdvance(zip3: string | null) {
+    setSelectedZip3(zip3)
+    if (zip3) setStepIndex((i) => Math.min(enabledCuts.length - 1, i + 1))
+  }
+
   // This BU's accounts.
   const buAccounts = useMemo(
     () => MAP_ACCOUNTS.filter((a) => a.bu === recommended.name),
@@ -535,7 +543,7 @@ export function BuExplorer() {
             selectedStateName={selectedStateName}
             onSelectStateName={setSelectedStateName}
             selectedZip3={selectedZip3}
-            onSelectZip3={setSelectedZip3}
+            onSelectZip3={selectZip3AndAdvance}
             onSelectAccount={setSelectedAccountId}
           />
         ) : (
