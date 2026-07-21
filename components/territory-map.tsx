@@ -313,6 +313,13 @@ export default function TerritoryMap({
 
   // Geography cut colors the states; any other cut colors the markers.
   const isGeoCut = !colorBy || colorBy.attribute === "region";
+  // States that actually hold accounts — used in the guided drill so only
+  // states with data are selectable (avoids landing on an empty state that
+  // then falls back to an unrelated regional sample).
+  const statesWithData = useMemo(
+    () => new Set(accounts.map((a) => a.geography)),
+    [accounts],
+  );
   const categoryColor = (v?: string) =>
     colorBy?.categories.find((c) => c.value === v)?.color ?? MARKER_FILL;
   const sizeBands = sizeLegend?.bands ?? DEFAULT_SIZE_BANDS;
@@ -506,12 +513,16 @@ export default function TerritoryMap({
             // everything else is muted so the region reads as the working set.
             const outOfRegion =
               geoLevel === "state" && focusRegion != null && r !== focusRegion;
-            const interactive = !outOfRegion;
+            // At the "state" level a state must also hold accounts to be
+            // selectable — clicking an empty state would otherwise drill into
+            // an unrelated regional sample.
+            const noData = geoLevel === "state" && !statesWithData.has(name);
+            const interactive = !outOfRegion && !noData;
             // Fill: country level emphasizes the US in one green tint; region &
             // state levels color by region; non-geo cuts stay neutral.
             const fill = !isGeoCut
               ? NEUTRAL_STATE_FILL
-              : outOfRegion
+              : outOfRegion || noData
                 ? NEUTRAL_STATE_FILL
                 : geoLevel === "country"
                   ? US_EMPHASIS_FILL
@@ -527,7 +538,9 @@ export default function TerritoryMap({
                 ? "United States"
                 : geoLevel === "stateRegion"
                   ? `${r} region`
-                  : `${name} · ${r}`;
+                  : noData
+                    ? `${name} · no ${region} accounts`
+                    : `${name} · ${r}`;
             return (
               <path
                 key={name}
@@ -544,7 +557,7 @@ export default function TerritoryMap({
                 fill={fill}
                 stroke={STROKE}
                 strokeWidth={0.85}
-                strokeOpacity={outOfRegion ? 0.5 : 1}
+                strokeOpacity={outOfRegion || noData ? 0.5 : 1}
                 style={{
                   cursor: interactive ? "pointer" : "default",
                   transition: "filter .15s, opacity .15s",

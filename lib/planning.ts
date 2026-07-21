@@ -463,52 +463,59 @@ function buildMapAccounts(
   bu: string,
   attr: 'vertical' | 'venueType',
   seeds: StateSeed[],
-  perState: number,
+  /** Accounts generated per DMA / ZIP3 — the density of each geo leaf. */
+  perDma: number,
 ): SampleAccount[] {
   const out: SampleAccount[] = []
   let g = 0
+  const cats = CUT_CATEGORIES[attr].map((c) => c.value)
   seeds.forEach((seed, si) => {
-    for (let i = 0; i < perState; i++) {
-      const seedNum = si * 7 + i * 13
-      // Most accounts follow the state's dominant category; every 4th varies
-      // so cuts show a clear majority with realistic outliers.
-      const others = CUT_CATEGORIES[attr]
-        .map((c) => c.value)
-        .filter((v) => v !== seed.lean)
-      const cat = i % 4 === 3 ? others[seedNum % others.length] : seed.lean
-      const dmas = DMA_BY_STATE[seed.state] ?? [seed.state]
-      const dma = dmas[i % dmas.length]
-      const account: SampleAccount = {
-        id: `${bu[0].toLowerCase()}${si}${i}`,
-        name: `${NAME_BASES[g % NAME_BASES.length]} ${
-          NAME_SUFFIX[Math.floor(g / NAME_BASES.length) % NAME_SUFFIX.length]
-        }`,
-        bu,
-        icpFitment: 52 + ((seedNum * 17 + 11) % 44),
-        potential: 46 + ((seedNum * 23 + 7) % 50),
-        geography: seed.state,
-        // Spread accounts across the state's DMAs (Level 3).
-        dma,
-        region: seed.region,
-        // Full five-level geographic backbone.
-        globalRegion: 'Americas',
-        country: 'United States',
-        stateRegion: seed.region,
-        state: seed.state,
-        zip3: ZIP3_BY_DMA[dma] ?? '000',
-        sizeBand: SIZE_BANDS[(si + i) % SIZE_BANDS.length],
-        moved: g % 9 === 4,
+    const dmas = DMA_BY_STATE[seed.state] ?? [seed.state]
+    const others = cats.filter((v) => v !== seed.lean)
+    // Generate a full book of accounts inside every DMA (ZIP3), so drilling to
+    // a single ZIP still reveals a rich, multi-industry, multi-size portfolio.
+    dmas.forEach((dma, di) => {
+      for (let i = 0; i < perDma; i++) {
+        const seedNum = si * 101 + di * 31 + i * 7
+        // Bias toward the state's dominant category, but guarantee that every
+        // ZIP3 also contains a spread of other industries / verticals so the
+        // Industry cut reads as a real mix after zooming in.
+        const cat = i % 3 === 0 ? seed.lean : others[(di + i) % others.length]
+        // Cycle through every size band so each ZIP3 spans SMB → Enterprise and
+        // the downstream Company Size cut always has something to filter.
+        const sizeBand = SIZE_BANDS[(di * 2 + i) % SIZE_BANDS.length]
+        const account: SampleAccount = {
+          id: `${bu[0].toLowerCase()}${si}-${di}-${i}`,
+          name: `${NAME_BASES[g % NAME_BASES.length]} ${
+            NAME_SUFFIX[Math.floor(g / NAME_BASES.length) % NAME_SUFFIX.length]
+          }`,
+          bu,
+          icpFitment: 52 + ((seedNum * 17 + 11) % 44),
+          potential: 46 + ((seedNum * 23 + 7) % 50),
+          geography: seed.state,
+          // Level 3 of the geo backbone — the DMA / metro.
+          dma,
+          region: seed.region,
+          // Full five-level geographic backbone.
+          globalRegion: 'Americas',
+          country: 'United States',
+          stateRegion: seed.region,
+          state: seed.state,
+          zip3: ZIP3_BY_DMA[dma] ?? '000',
+          sizeBand,
+          moved: g % 11 === 4,
+        }
+        if (attr === 'vertical') {
+          account.vertical = cat
+        } else {
+          account.venueType = cat
+          // Meeting space correlates with venue type, with realistic variation.
+          account.meetingSpace = MEETING_SPACE_BY_VENUE[cat] ?? '10-50k sqft'
+        }
+        out.push(account)
+        g++
       }
-      if (attr === 'vertical') {
-        account.vertical = cat
-      } else {
-        account.venueType = cat
-        // Meeting space correlates with venue type, with realistic variation.
-        account.meetingSpace = MEETING_SPACE_BY_VENUE[cat] ?? '10-50k sqft'
-      }
-      out.push(account)
-      g++
-    }
+    })
   })
   return out
 }
@@ -525,7 +532,7 @@ export const MAP_ACCOUNTS: SampleAccount[] = [
       { state: 'New York', region: 'East', lean: 'Financial Services' },
       { state: 'Georgia', region: 'East', lean: 'Manufacturing' },
     ],
-    4,
+    8,
   ),
   ...buildMapAccounts(
     'Enterprise',
@@ -539,7 +546,7 @@ export const MAP_ACCOUNTS: SampleAccount[] = [
       { state: 'Washington', region: 'West', lean: 'Technology' },
       { state: 'Georgia', region: 'East', lean: 'Healthcare' },
     ],
-    4,
+    8,
   ),
   ...buildMapAccounts(
     'Hospitality Cloud',
@@ -552,7 +559,7 @@ export const MAP_ACCOUNTS: SampleAccount[] = [
       { state: 'California', region: 'West', lean: 'Independent' },
       { state: 'Texas', region: 'Central', lean: 'Branded / Enterprise' },
     ],
-    4,
+    8,
   ),
 ]
 
