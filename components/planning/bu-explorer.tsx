@@ -73,6 +73,9 @@ export function BuExplorer() {
   // The state the user drills into on the Geography cut — carried across every
   // subsequent cut so the funnel stays scoped to it.
   const [selectedStateName, setSelectedStateName] = useState<string | null>(null)
+  // The ZIP3 leaf drilled into on the Geography cut — the finest scope carried
+  // into every subsequent cut.
+  const [selectedZip3, setSelectedZip3] = useState<string | null>(null)
   const [filterValue, setFilterValue] = useState<string>('All')
 
   // Reset everything whenever the BU changes.
@@ -82,8 +85,15 @@ export function BuExplorer() {
     setSelectedAccountId(null)
     setStepIndex(0)
     setSelectedStateName(null)
+    setSelectedZip3(null)
     setFilterValue('All')
   }, [buildDefault])
+
+  // Changing the carried state (via the switcher) invalidates the ZIP3 leaf.
+  function selectState(name: string | null) {
+    setSelectedStateName(name)
+    setSelectedZip3(null)
+  }
 
   // This BU's accounts.
   const buAccounts = useMemo(
@@ -170,7 +180,12 @@ export function BuExplorer() {
   }
 
   // One mapping shared by the guided Geography cut and the other cuts' map.
-  const mapAccounts = buAccounts.map((a) => ({
+  // Non-geo cuts stay scoped to the ZIP3 leaf when one was drilled into.
+  const scopedAccounts =
+    !isGeoStep && selectedZip3
+      ? buAccounts.filter((a) => a.zip3 === selectedZip3)
+      : buAccounts
+  const mapAccounts = scopedAccounts.map((a) => ({
     id: a.id,
     name: a.name,
     geography: a.geography,
@@ -182,11 +197,16 @@ export function BuExplorer() {
     sizeBand: accountCutValue(a, sizeAttr),
   }))
 
+  // Label for the carried geographic scope shown in non-geo cut descriptions.
+  const scopeLabel = selectedZip3
+    ? `${focusState ?? 'Selected state'} · ZIP3 ${selectedZip3}xx`
+    : focusState ?? 'Selected state'
+
   const stageDescription = isGeoStep
-    ? 'The five-level geographic backbone: Global Region → Country → State Region → State → ZIP3. Drill down through each level; the state you land on carries into the next cut.'
+    ? 'The five-level geographic backbone: Global Region → Country → State Region → State → ZIP3. Drill down through each level; the ZIP3 you land on carries into the next cut.'
     : isRefineStep
-      ? `${focusState ?? 'Selected state'} · bubble size shows ${sizeLabel.toLowerCase()}. Filter by a ${sizeLabel.toLowerCase()} band to drill down once more.`
-      : `${focusState ?? 'Selected state'} · each account colored by ${categorical.label.toLowerCase()}.`
+      ? `${scopeLabel} · bubble size shows ${sizeLabel.toLowerCase()}. Filter by a ${sizeLabel.toLowerCase()} band to drill down once more.`
+      : `${scopeLabel} · each account colored by ${categorical.label.toLowerCase()}.`
 
   const isScenario = mode === 'scenario'
 
@@ -460,7 +480,7 @@ export function BuExplorer() {
               <select
                 className="rounded-md border border-border/70 bg-card px-2.5 py-1.5 text-sm font-medium text-ink"
                 value={focusState ?? ''}
-                onChange={(e) => setSelectedStateName(e.target.value)}
+                onChange={(e) => selectState(e.target.value)}
               >
                 {stateOptions.map((s) => (
                   <option key={s} value={s}>
@@ -469,6 +489,22 @@ export function BuExplorer() {
                 ))}
               </select>
             </label>
+            {selectedZip3 && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-sage-2">
+                  ZIP3 scope
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedZip3(null)}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-brand-green/50 bg-brand-green/10 px-2.5 py-1.5 text-sm font-semibold text-ink hover:bg-brand-green/20"
+                  title="Clear ZIP3 scope — widen back to the whole state"
+                >
+                  {selectedZip3}xx
+                  <X className="size-3.5" aria-hidden />
+                </button>
+              </div>
+            )}
             {isRefineStep && (
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-sage-2">
@@ -498,6 +534,8 @@ export function BuExplorer() {
             sizeLegend={{ label: sizeLabel, bands: sizeBands }}
             selectedStateName={selectedStateName}
             onSelectStateName={setSelectedStateName}
+            selectedZip3={selectedZip3}
+            onSelectZip3={setSelectedZip3}
             onSelectAccount={setSelectedAccountId}
           />
         ) : (

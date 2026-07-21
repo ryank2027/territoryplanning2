@@ -265,6 +265,10 @@ export interface TerritoryMapProps {
   onSelectCountry?: () => void;
   /** Called at the "stateRegion" level when the user picks a state region. */
   onSelectStateRegion?: (region: Region) => void;
+  /** ZIP3 level: the currently selected ZIP3 (zooms into that cluster). */
+  selectedZip3?: string | null;
+  /** ZIP3 level: called when the user clicks a ZIP3 cluster to select it. */
+  onSelectZip3?: (zip3: string) => void;
   className?: string;
 }
 
@@ -285,6 +289,8 @@ export default function TerritoryMap({
   geoLevel,
   onSelectCountry,
   onSelectStateRegion,
+  selectedZip3 = null,
+  onSelectZip3,
   className = "",
 }: TerritoryMapProps) {
   const guided = geoLevel !== undefined;
@@ -692,9 +698,11 @@ export default function TerritoryMap({
           })}
 
         {/* Level 5 (leaf): cluster the state's accounts by ZIP3. Each ZIP3 is a
-            labeled bubble sized by its account count. ZIP3 polygons aren't
-            available, so clusters sit at their DMA's metro coordinate (or a
-            ring around the state centroid) — illustrative, not cartographic. */}
+            solid, high-contrast labeled bubble sized by its account count.
+            Clicking a bubble SELECTS that ZIP3 — it zooms in (scales up, reveals
+            its individual accounts) and carries into the next cut. ZIP3 polygons
+            aren't available, so clusters sit at their DMA's metro coordinate (or
+            a ring around the state centroid) — illustrative, not cartographic. */}
         {selectedState &&
           zip3Mode &&
           (() => {
@@ -706,7 +714,14 @@ export default function TerritoryMap({
             });
             const entries = Array.from(groups.entries());
             const G = entries.length;
-            return entries.map(([zip3, accts], gi) => {
+            const hasSelection = Boolean(selectedZip3);
+            // Render the selected ZIP3 last so it paints above its neighbors.
+            const ordered = entries
+              .map((e, gi) => ({ e, gi }))
+              .sort((a, b) =>
+                a.e[0] === selectedZip3 ? 1 : b.e[0] === selectedZip3 ? -1 : 0,
+              );
+            return ordered.map(({ e: [zip3, accts], gi }) => {
               const coord = accts[0]?.dma ? DMA_COORDS[accts[0].dma] : undefined;
               const projected = coord
                 ? (projection([coord[0], coord[1]]) as [number, number] | null)
@@ -721,51 +736,104 @@ export default function TerritoryMap({
                 gx = cx + Math.cos(gAngle) * gRadius;
                 gy = cy + Math.sin(gAngle) * gRadius;
               }
-              // Bubble radius encodes the ZIP3 account count.
-              const bubble = 15 + Math.min(accts.length, 8) * 3;
-              const dimGroup = accts.every((a) => isDimmed(a));
+              const isSelected = selectedZip3 === zip3;
+              const isMuted = hasSelection && !isSelected;
+              // Bubble radius encodes account count; the selected ZIP3 scales up.
+              const base = 18 + Math.min(accts.length, 8) * 3.5;
+              const bubble = isSelected ? base * 1.35 : base;
+              const fill = isSelected ? SELECTED_FILL : MARKER_FILL;
+              const labelColor = isSelected ? MARKER_FILL : "#FFFFFF";
               return (
-                <g key={zip3}>
+                <g
+                  key={zip3}
+                  style={{
+                    cursor: onSelectZip3 ? "pointer" : "default",
+                    opacity: isMuted ? 0.35 : 1,
+                    transition: "opacity .15s",
+                  }}
+                  onClick={() => onSelectZip3?.(zip3)}
+                  role={onSelectZip3 ? "button" : undefined}
+                  tabIndex={onSelectZip3 ? 0 : undefined}
+                  aria-label={`Select ZIP3 ${zip3}xx (${accts.length} accounts)`}
+                  onKeyDown={(ev) =>
+                    (ev.key === "Enter" || ev.key === " ") &&
+                    onSelectZip3?.(zip3)
+                  }
+                >
+                  {/* selection halo */}
+                  {isSelected && (
+                    <circle
+                      cx={gx}
+                      cy={gy}
+                      r={bubble + 6}
+                      fill="none"
+                      stroke={SELECTED_FILL}
+                      strokeOpacity={0.4}
+                      strokeWidth={3}
+                    />
+                  )}
+                  {/* solid, high-contrast bubble */}
                   <circle
                     cx={gx}
                     cy={gy}
                     r={bubble}
-                    fill={MARKER_FILL}
-                    fillOpacity={dimGroup ? 0.08 : 0.14}
-                    stroke={MARKER_FILL}
-                    strokeOpacity={dimGroup ? 0.3 : 0.7}
-                    strokeWidth={1.25}
+                    fill={fill}
+                    stroke={STROKE}
+                    strokeWidth={2}
                   />
-                  {/* ZIP3 digits + account count */}
+                  {/* ZIP3 digits */}
                   <text
                     x={gx}
-                    y={gy - 1}
+                    y={gy + (isSelected ? 0 : 2)}
                     textAnchor="middle"
                     className="select-none"
-                    style={{ fontSize: 13, fontWeight: 800, fill: MARKER_FILL }}
+                    style={{
+                      fontSize: isSelected ? 20 : 16,
+                      fontWeight: 800,
+                      fill: labelColor,
+                    }}
                   >
                     {zip3}
                   </text>
+                  {/* account-count pill just below the bubble */}
                   <text
                     x={gx}
-                    y={gy + 12}
+                    y={gy + bubble + 12}
                     textAnchor="middle"
                     className="select-none"
-                    style={{ fontSize: 9, fontWeight: 600, fill: MARKER_FILL, opacity: 0.7 }}
+                    style={{ fontSize: 11, fontWeight: 700, fill: MARKER_FILL }}
                   >
-                    {`${zip3}xx · ${accts.length}`}
+                    {`${zip3}xx · ${accts.length} acct${accts.length === 1 ? "" : "s"}`}
                   </text>
-                  {/* clickable hit target for the cluster's lead account */}
-                  <circle
-                    cx={gx}
-                    cy={gy}
-                    r={bubble}
-                    fill="transparent"
-                    style={{ cursor: onSelectAccount ? "pointer" : "default" }}
-                    onClick={() => accts[0] && onSelectAccount?.(accts[0].id)}
-                  >
-                    <title>{`ZIP3 ${zip3}xx · ${accts.length} accounts`}</title>
-                  </circle>
+
+                  {/* When selected, reveal the individual accounts inside it. */}
+                  {isSelected &&
+                    accts.slice(0, 10).map((a, ai) => {
+                      const n = Math.min(accts.length, 10);
+                      const ang = (ai / n) * Math.PI * 2 - Math.PI / 2;
+                      const rr = bubble * 0.55;
+                      const ax = gx + Math.cos(ang) * rr;
+                      const ay = gy + Math.sin(ang) * rr;
+                      return (
+                        <circle
+                          key={a.id}
+                          cx={ax}
+                          cy={ay}
+                          r={4}
+                          fill={a.moved ? MARKER_MOVED_FILL : MARKER_FILL}
+                          stroke={STROKE}
+                          strokeWidth={1}
+                          style={{ cursor: onSelectAccount ? "pointer" : "default" }}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            onSelectAccount?.(a.id);
+                          }}
+                        >
+                          <title>{`${a.name} · ${zip3}xx`}</title>
+                        </circle>
+                      );
+                    })}
+                  <title>{`ZIP3 ${zip3}xx · ${accts.length} accounts`}</title>
                 </g>
               );
             });

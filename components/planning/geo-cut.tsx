@@ -22,6 +22,9 @@ interface GeoCutProps {
   /** Lifted state selection — carried into every subsequent cut. */
   selectedStateName: string | null
   onSelectStateName: (name: string | null) => void
+  /** Lifted ZIP3 selection — the leaf; carried into every subsequent cut. */
+  selectedZip3: string | null
+  onSelectZip3: (zip3: string | null) => void
   onSelectAccount: (id: string) => void
 }
 
@@ -38,6 +41,8 @@ export function GeoCut({
   sizeLegend,
   selectedStateName,
   onSelectStateName,
+  selectedZip3,
+  onSelectZip3,
   onSelectAccount,
 }: GeoCutProps) {
   const regionOf = (name: string | null): Region | null =>
@@ -63,6 +68,7 @@ export function GeoCut({
   /** Navigate to a level, clearing every selection deeper than it. */
   function goToLevel(target: GeoLevel) {
     setLevel(target)
+    if (target < 5) onSelectZip3(null)
     if (target < 4) onSelectStateName(null)
     if (target < 3) setStateRegion(null)
     if (target < 2) setCountry(null)
@@ -71,6 +77,7 @@ export function GeoCut({
 
   function reset() {
     setLevel(1)
+    onSelectZip3(null)
     onSelectStateName(null)
     setStateRegion(null)
     setCountry(null)
@@ -82,7 +89,10 @@ export function GeoCut({
     { name: 'Country', value: country },
     { name: 'State Region', value: stateRegion },
     { name: 'State', value: selectedStateName },
-    { name: 'ZIP3', value: level >= 5 ? 'By ZIP3' : null },
+    {
+      name: 'ZIP3',
+      value: selectedZip3 ? `${selectedZip3}xx` : level >= 5 ? 'Pick a ZIP3' : null,
+    },
   ]
 
   const captions: Record<GeoLevel, string> = {
@@ -90,7 +100,9 @@ export function GeoCut({
     2: 'Select a country within the Americas to zoom into its states.',
     3: 'Pick a state region to zoom into its states.',
     4: `Pick a state in the ${stateRegion ?? 'selected'} region to reveal its ZIP3 clusters.`,
-    5: `${selectedStateName ?? 'Selected state'} · accounts grouped by ZIP3 — the leaf of the geographic cut.`,
+    5: selectedZip3
+      ? `ZIP3 ${selectedZip3}xx selected — this leaf carries into the next cut. Pick another ZIP3 to change it.`
+      : `${selectedStateName ?? 'Selected state'} · click a ZIP3 bubble to zoom into it and carry it into the next cut.`,
   }
 
   return (
@@ -288,6 +300,8 @@ export function GeoCut({
           sizeLegend={sizeLegend}
           selectedStateName={selectedStateName}
           geoLevel="zip3"
+          selectedZip3={selectedZip3}
+          onSelectZip3={onSelectZip3}
           onSelectAccount={onSelectAccount}
         />
       )}
