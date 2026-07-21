@@ -558,6 +558,7 @@ export function BuExplorer() {
                 ? { label: sizeLabel, value: filterValue, field: 'size' }
                 : null
             }
+            focusZip3={selectedZip3}
             onSelectAccount={setSelectedAccountId}
           />
         )}

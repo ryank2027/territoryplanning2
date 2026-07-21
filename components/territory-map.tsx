@@ -269,6 +269,12 @@ export interface TerritoryMapProps {
   selectedZip3?: string | null;
   /** ZIP3 level: called when the user clicks a ZIP3 cluster to select it. */
   onSelectZip3?: (zip3: string) => void;
+  /**
+   * Non-geo cuts: when the working set has been drilled to a single ZIP3, this
+   * anchors the account markers tightly over that ZIP's metro instead of
+   * scattering them across the whole state.
+   */
+  focusZip3?: string | null;
   className?: string;
 }
 
@@ -291,6 +297,7 @@ export default function TerritoryMap({
   onSelectStateRegion,
   selectedZip3 = null,
   onSelectZip3,
+  focusZip3 = null,
   className = "",
 }: TerritoryMapProps) {
   const guided = geoLevel !== undefined;
@@ -682,12 +689,33 @@ export default function TerritoryMap({
         {selectedState &&
           !groupByDma &&
           !zip3Mode &&
-          markerAccounts.slice(0, 14).map((a, i) => {
-            const [cx, cy] = path.centroid(selectedState as any);
+          (() => {
+            // Anchor point for the cluster. When drilled to a single ZIP3, sit
+            // the markers over that ZIP's metro (its DMA coordinate) so they
+            // read as "inside this ZIP" rather than spread across the state.
+            const [scx, scy] = path.centroid(selectedState as any);
+            let anchorX = scx;
+            let anchorY = scy;
+            if (focusZip3) {
+              const withDma = markerAccounts.find(
+                (a) => a.zip3 === focusZip3 && a.dma,
+              );
+              const coord = withDma?.dma ? DMA_COORDS[withDma.dma] : undefined;
+              const projected = coord
+                ? (projection([coord[0], coord[1]]) as [number, number] | null)
+                : null;
+              if (projected) [anchorX, anchorY] = projected;
+            }
+            // Tight spacing when zoomed into a ZIP; wider across a full state.
+            const step = focusZip3 ? 15 : 26;
+            const growth = focusZip3 ? 4 : 9;
+            return markerAccounts.slice(0, 14).map((a, i) => {
+            const cx = anchorX;
+            const cy = anchorY;
             const rr = radiusFor(a.sizeBand, sizeBands) * 1.5;
             // Golden-angle spiral keeps a dense cluster evenly spread.
             const angle = i * 2.399;
-            const spread = i === 0 ? 0 : 26 + i * 9;
+            const spread = i === 0 ? 0 : step + i * growth;
             const rx = cx + Math.cos(angle) * spread;
             const ry = cy + Math.sin(angle) * spread;
             const dim = isDimmed(a);
@@ -708,7 +736,8 @@ export default function TerritoryMap({
                 <title>{`${a.name} · ${a.category ?? a.region} · ${a.sizeBand ?? ""}`}</title>
               </circle>
             );
-          })}
+            });
+          })()}
 
         {/* Level 5 (leaf): cluster the state's accounts by ZIP3. Each ZIP3 is a
             solid, high-contrast labeled bubble sized by its account count.
